@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สมัครแอดมินใหม่ - Dssi Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa 0%, #fce4ec 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
+    <div class="text-center mb-5">
+      <h2 class="text-2xl font-bold text-cyan-600">🔐 สมัครแอดมินใหม่</h2>
+      <p class="text-sm text-gray-500">กรอกข้อมูลเพื่อสร้างบัญชีผู้ดูแลระบบ</p>
+    </div>
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-700">อีเมล</label>
+        <input type="email" id="email" required
+          class="w-full border border-cyan-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-300" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">รหัสผ่าน</label>
+        <input type="password" id="password" required
+          class="w-full border border-pink-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-200" />
+      </div>
+      <button type="submit"
+        class="w-full bg-gradient-to-r from-cyan-300 to-pink-200 text-gray-900 font-bold py-2 rounded-lg hover:from-pink-200 hover:to-green-100 transition">
+        ✅ สมัครแอดมิน
+      </button>
+    </form>
+    <p id="registerMessage" class="text-sm text-center mt-4"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, setDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("registerForm");
+    const msg = document.getElementById("registerMessage");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "⏳ กำลังสร้างบัญชี...";
+      msg.className = "text-blue-500 text-center mt-4";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+
+        await setDoc(doc(db, "admins", uid), {
+          email: email,
+          createdAt: serverTimestamp()
+        });
+
+        msg.textContent = "✅ สมัครเรียบร้อยแล้ว! สามารถเข้าสู่ระบบได้เลย";
+        msg.className = "text-green-600 text-center mt-4";
+        form.reset();
+      } catch (error) {
+        console.error("Register error:", error);
+        msg.textContent = "❌ ไม่สามารถสมัครได้: " + error.message;
+        msg.className = "text-red-500 text-center mt-4";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการกิจกรรม - Dssi Training</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(to bottom right, #f0f9ff, #fce7f3);
+    }
+    h1 {
+  font-weight: 700;
+  background: linear-gradient(to right, #6366f1, #ec4899);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin-bottom: 2rem;
+    }
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.1);
+      padding: 1.5rem;
+      border-left: 6px solid #6366f1;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.01);
+    }
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      transition: all 0.2s ease-in-out;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    input, textarea {
+      border: 1.5px solid #ddd;
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      width: 100%;
+      transition: border 0.2s;
+    }
+    input:focus, textarea:focus {
+      border-color: #a78bfa;
+      outline: none;
+      box-shadow: 0 0 0 2px #c4b5fd40;
+    }
+  </style>
+</head>
+<body class="min-h-screen px-4 py-6">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl">📋 จัดการกิจกรรม</h1>
+
+    <!-- ปุ่มเปิดฟอร์มเพิ่ม -->
+    <button id="toggleForm" class="mb-4 bg-pink-500 text-white btn hover:bg-pink-600">+ เพิ่มกิจกรรมใหม่</button>
+
+    <!-- ฟอร์มเพิ่มกิจกรรม -->
+    <form id="activityForm" class="space-y-3 bg-white rounded-lg p-6 mb-6 shadow hidden">
+      <input id="title" placeholder="หัวข้อกิจกรรม" required>
+      <input id="image" placeholder="URL รูปกิจกรรม">
+      <input id="date" type="date" required>
+      <input id="time" placeholder="เวลา (เช่น 09:00 - 12:00 น.)" required>
+      <textarea id="description" placeholder="รายละเอียดกิจกรรม" rows="4"></textarea>
+      <button type="submit" class="bg-indigo-500 text-white btn hover:bg-indigo-600">💾 บันทึกกิจกรรม</button>
+    </form>
+
+    <!-- รายการกิจกรรม -->
+    <div id="activityList" class="space-y-4"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("activityForm");
+    const toggleForm = document.getElementById("toggleForm");
+    const list = document.getElementById("activityList");
+
+    toggleForm.addEventListener("click", () => form.classList.toggle("hidden"));
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login-admin.html";
+      } else {
+        loadActivities();
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const newActivity = {
+            title: document.getElementById("title").value,
+            image: document.getElementById("image").value || "https://via.placeholder.com/400x200",
+            date: document.getElementById("date").value,
+            time: document.getElementById("time").value,
+            description: document.getElementById("description").value,
+            createdAt: serverTimestamp(),
+            byUser: user.email
+          };
+          await addDoc(collection(db, "activities"), newActivity);
+          form.reset();
+          form.classList.add("hidden");
+          loadActivities();
+        });
+      }
+    });
+
+    async function loadActivities() {
+      const q = query(collection(db, "activities"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      list.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const act = docSnap.data();
+        const card = `
+          <div class="card flex justify-between items-start">
+            <div>
+              <h3 class="text-lg font-semibold text-indigo-600">${act.title}</h3>
+              <p class="text-sm text-gray-500 mb-1">📅 ${act.date} 🕒 ${act.time}</p>
+              <p class="text-sm">${act.description}</p>
+            </div>
+            <button onclick="deleteActivity('${docSnap.id}')" class="bg-red-100 text-red-700 btn hover:bg-red-200">🗑 ลบ</button>
+          </div>
+        `;
+        list.innerHTML += card;
+      });
+    }
+
+    window.deleteActivity = async (id) => {
+      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบกิจกรรมนี้?")) {
+        await deleteDoc(doc(db, "activities", id));
+        loadActivities();
+      }
+    }
+  </script>
+</body>
+</html>

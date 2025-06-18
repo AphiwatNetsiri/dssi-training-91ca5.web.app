@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แผงควบคุมผู้ดูแลระบบ - Dssi Training</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(to bottom right, #f0f9ff, #fce7f3);
+      min-height: 100vh;
+    }
+    h1 {
+  font-weight: 700;
+  background: linear-gradient(to right, #6366f1, #ec4899);
+  background-clip: text;               /* 👈 รองรับ Firefox, Edge */
+  -webkit-background-clip: text;       /* 👈 รองรับ Chrome, Safari */
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+    }
+    .card {
+      background: linear-gradient(145deg, #ffffff, #f0f4ff);
+      border-radius: 1.25rem;
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
+      border: 1px solid #e0e7ff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2);
+    }
+    .card a {
+      background: linear-gradient(to right, #6366f1, #ec4899);
+      border-radius: 9999px;
+      font-weight: bold;
+      padding: 0.5rem 1.25rem;
+      transition: all 0.3s ease;
+    }
+    .card a:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+    }
+    .btn-logout {
+      background-color: #ef4444;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    .btn-logout:hover {
+      background-color: #dc2626;
+    }
+    #adminContent {
+      display: none;
+    }
+  </style>
+</head>
+<body class="flex flex-col">
+
+  <nav class="bg-white shadow-md p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center">
+        <img src="image/images.png" alt="Dssi Logo" class="w-10 h-10 mr-3 rounded-lg shadow" /> 
+        <span class="text-xl font-bold text-cyan-600">Dssi Admin Panel</span>
+      </div>
+      <div>
+        <span id="adminEmailDisplay" class="text-gray-700 text-sm mr-4"></span>
+        <button id="logoutBtn" class="btn-logout">ออกจากระบบ</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="flex-grow p-8" id="adminContent">
+    <div class="container mx-auto">
+      <h1 class="text-4xl text-center mb-10">ยินดีต้อนรับผู้ดูแลระบบ!</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="card p-6 text-center">
+          <h2 class="text-2xl font-bold text-blue-600 mb-4">จัดการกิจกรรม</h2>
+          <p class="text-gray-700 mb-4">เพิ่ม, แก้ไข, ลบกิจกรรมอบรม และดูรายละเอียดกิจกรรม</p>
+          <a href="manage-activities.html" class="text-white inline-block">ไปที่หน้าจัดการกิจกรรม</a>
+        </div>
+
+        <div class="card p-6 text-center">
+          <h2 class="text-2xl font-bold text-pink-600 mb-4">รายชื่อผู้สมัคร</h2>
+          <p class="text-gray-700 mb-4">ดูและดาวน์โหลดรายชื่อผู้สมัครในแต่ละกิจกรรม</p>
+          <a href="view-registrations.html" class="text-white inline-block">ไปที่หน้ารายชื่อผู้สมัคร</a>
+        </div>
+
+        <div class="card p-6 text-center">
+          <h2 class="text-2xl font-bold text-purple-600 mb-4">การตั้งค่าระบบ</h2>
+          <p class="text-gray-700 mb-4">จัดการการตั้งค่าทั่วไปของระบบและผู้ดูแลระบบ</p>
+          <a href="system-settings.html" class="text-white inline-block">ไปที่หน้าตั้งค่า</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white shadow-md p-4 text-center text-gray-600 text-sm mt-auto">
+    &copy; 2025 Dssi Training Admin. All rights reserved.
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const adminEmailDisplay = document.getElementById("adminEmailDisplay");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const adminContent = document.getElementById("adminContent");
+
+    if (localStorage.getItem('isAdmin') !== 'true') {
+      alert("กรุณาเข้าสู่ระบบผู้ดูแลระบบก่อนใช้งาน!");
+      window.location.href = "login-admin.html";
+      throw new Error("Unauthorized access - Redirecting..."); 
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่!");
+        localStorage.removeItem('isAdmin');
+        window.location.href = "login-admin.html";
+        return;
+      }
+
+      const docRef = doc(db, "admins", user.uid); 
+      try {
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          adminEmailDisplay.textContent = `ยินดีต้อนรับ, ${user.email}`;
+          adminContent.style.display = 'block';
+          localStorage.setItem('isAdmin', 'true');
+        } else {
+          alert("บัญชีของคุณไม่มีสิทธิ์เข้าถึงส่วนผู้ดูแลระบบ");
+          await signOut(auth);
+          localStorage.removeItem('isAdmin');
+          window.location.href = "login-admin.html";
+        }
+      } catch (error) {
+        console.error("Error checking admin role:", error);
+        alert("เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์ กรุณาลองใหม่");
+        await signOut(auth);
+        localStorage.removeItem('isAdmin');
+        window.location.href = "login-admin.html";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        localStorage.removeItem('isAdmin');
+        alert("ออกจากระบบผู้ดูแลระบบเรียบร้อยแล้ว");
+        window.location.href = "login-admin.html";
+      } catch (error) {
+        console.error("Error signing out:", error);
+        alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+      }
+    });
+  </script>
+</body>
+</html>

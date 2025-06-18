@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตั้งค่าระบบ - Dssi Training</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(to bottom right, #f5f5ff, #fff1f7);
+    }
+    h1 {
+      font-weight: 700;
+      background: linear-gradient(to right, #6366f1, #ec4899);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-10 px-6">
+
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-4xl">⚙️ ตั้งค่าระบบ - จัดการแอดมิน</h1>
+
+    <!-- Form เพิ่มแอดมิน -->
+    <form id="addAdminForm" class="bg-white p-6 rounded-xl shadow-lg space-y-4 mb-8 border border-purple-100">
+      <label for="uid" class="block font-semibold text-purple-700">📌 UID ของผู้ใช้ที่ต้องการตั้งเป็นแอดมิน</label>
+      <input id="uid" placeholder="วาง UID ของผู้ใช้ (Firebase UID)" class="w-full p-3 border rounded-lg border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      <button type="submit" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full shadow hover:from-purple-600 hover:to-pink-600 transition">
+        ➕ เพิ่มแอดมิน
+      </button>
+    </form>
+
+    <!-- รายชื่อแอดมิน -->
+    <div id="adminList" class="space-y-3">
+      <p class="text-lg font-semibold text-gray-700 mb-2">👥 รายชื่อแอดมินทั้งหมด:</p>
+      <!-- รายชื่อจะถูกเพิ่มที่นี่ -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const adminList = document.getElementById("adminList");
+    const form = document.getElementById("addAdminForm");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.href = "login-admin.html";
+      await loadAdmins();
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const uid = document.getElementById("uid").value.trim();
+        if (uid) {
+          await setDoc(doc(db, "admins", uid), { role: "admin" });
+          alert("✅ เพิ่มแอดมินเรียบร้อยแล้ว");
+          form.reset();
+          loadAdmins();
+        }
+      });
+    });
+
+    async function loadAdmins() {
+      adminList.querySelectorAll(".admin-item")?.forEach(el => el.remove());
+
+      const snap = await getDocs(collection(db, "admins"));
+      snap.forEach(docSnap => {
+        const div = document.createElement("div");
+        div.className = "admin-item bg-purple-100 text-purple-800 px-4 py-2 rounded-lg shadow-sm border border-purple-200";
+        div.textContent = `🔐 UID: ${docSnap.id}`;
+        adminList.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

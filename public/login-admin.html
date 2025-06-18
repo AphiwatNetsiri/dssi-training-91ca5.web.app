@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เข้าสู่ระบบแอดมิน - Dssi Training</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #fff7f7 60%, #e8f5e9 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-cyan-100">
+    <div class="flex flex-col items-center mb-3">
+      <img src="image/images.png" alt="Dssi Logo" class="w-12 h-12 mb-2 rounded-xl shadow" />
+      <span class="text-cyan-500 font-bold text-lg">Dssi Admin</span>
+    </div>
+    <h2 class="text-2xl font-bold text-center text-pink-400 mb-6">🔐 เข้าสู่ระบบผู้ดูแลระบบ</h2>
+    <form id="loginForm" class="space-y-5">
+      <div>
+        <label class="block text-sm text-cyan-700 mb-1">อีเมล</label>
+        <input type="email" id="email" required class="w-full border border-pink-200 px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-pink-200 focus:outline-none text-pink-600 placeholder-pink-200" />
+      </div>
+      <div>
+        <label class="block text-sm text-cyan-700 mb-1">รหัสผ่าน</label>
+        <input type="password" id="password" required class="w-full border border-green-200 px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-200 focus:outline-none text-green-600 placeholder-green-200" />
+      </div>
+      <button type="submit" class="w-full bg-gradient-to-r from-pink-200 to-cyan-100 text-pink-900 py-3 rounded-full text-lg font-bold hover:from-cyan-100 hover:to-green-100 hover:text-green-700 shadow transition">
+        เข้าสู่ระบบ
+      </button>
+    </form>
+    <p id="loginMessage" class="text-sm text-center mt-4"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("loginMessage");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      message.textContent = "🔄 กำลังตรวจสอบข้อมูล...";
+      message.className = "text-cyan-400 text-center mt-4";
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        const adminDocRef = doc(db, "admins", user.uid);
+        const adminDocSnap = await getDoc(adminDocRef);
+
+        if (adminDocSnap.exists()) {
+          message.textContent = "✅ เข้าสู่ระบบแอดมินสำเร็จ กำลังเข้าสู่ระบบ...";
+          message.className = "text-green-600 text-center mt-4";
+          localStorage.setItem('isAdmin', 'true');
+          setTimeout(() => window.location.href = "admin.html", 1000);
+        } else {
+          message.textContent = "❌ บัญชีนี้ไม่มีสิทธิ์เข้าถึงระบบแอดมิน";
+          message.className = "text-red-500 text-center mt-4";
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        message.textContent = "❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาดในการเข้าสู่ระบบ";
+        message.className = "text-red-500 text-center mt-4";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR เช็คชื่ออบรม</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f6f9fb; font-family: 'Prompt', sans-serif; }
+    .container { max-width: 600px; margin-top: 60px; }
+  </style>
+</head>
+<body>
+  <div class="container text-center">
+    <h3 class="text-primary mb-4">ระบบเช็คชื่ออบรม</h3>
+    <div id="status" class="alert alert-info">กำลังตรวจสอบ...</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const statusDiv = document.getElementById("status");
+
+    // ดึงพารามิเตอร์จาก URL เช่น ?activity=XXX&email=YYY
+    const params = new URLSearchParams(window.location.search);
+    const activityId = params.get("activity");
+    const email = params.get("email");
+
+    if (!activityId || !email) {
+      statusDiv.className = "alert alert-danger";
+      statusDiv.innerText = "❌ ลิงก์ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง";
+    } else {
+      // ตรวจสอบว่าผู้สมัครมีในฐานข้อมูลหรือไม่
+      const q = query(collection(db, "registrations"),
+        where("activityId", "==", activityId),
+        where("email", "==", email)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        statusDiv.className = "alert alert-warning";
+        statusDiv.innerText = "❌ ยังไม่มีข้อมูลผู้สมัครกิจกรรมนี้";
+      } else {
+        const regDoc = snap.docs[0];
+        const ref = doc(db, "registrations", regDoc.id);
+
+        // อัปเดตเวลาเช็คชื่อ
+        await updateDoc(ref, {
+          checkedInAt: serverTimestamp()
+        });
+
+        statusDiv.className = "alert alert-success";
+        statusDiv.innerHTML = `
+          ✅ เช็คชื่อสำเร็จ<br>
+          <strong>${regDoc.data().name}</strong><br>
+          เวลา: ${new Date().toLocaleTimeString()}
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายชื่อผู้สมัคร</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+  <div class="container">
+    <h3 class="mb-4">รายชื่อผู้สมัคร</h3>
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr><th>ชื่อ</th><th>อีเมล</th><th>รหัส</th><th>หน่วยงาน</th><th>เวลาสมัคร</th></tr>
+      </thead>
+      <tbody id="registrantsBody"></tbody>
+    </table>
+    <button id="exportBtn" class="btn btn-outline-primary">Export CSV</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPEbltTHn_Zq44N5sABD1xokFbcviDNVU",
+      authDomain: "dssi-training-91ca5.firebaseapp.com",
+      projectId: "dssi-training-91ca5",
+      storageBucket: "dssi-training-91ca5.appspot.com",
+      messagingSenderId: "232029382209",
+      appId: "1:232029382209:web:6861b0963d9fd7997b88c0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const activityId = new URLSearchParams(location.search).get("id");
+
+    const body = document.getElementById("registrantsBody");
+    const csvData = [["ชื่อ", "อีเมล", "รหัส", "หน่วยงาน", "เวลาสมัคร"]];
+
+    const q = query(collection(db, "registrations"), where("activityId", "==", activityId));
+    const snap = await getDocs(q);
+    snap.forEach(doc => {
+      const d = doc.data();
+      const time = d.registeredAt?.toDate().toLocaleString("th-TH") ?? "-";
+      csvData.push([d.name, d.email, d.studentId, d.department, time]);
+      body.innerHTML += `
+        <tr>
+          <td>${d.name}</td>
+          <td>${d.email}</td>
+          <td>${d.studentId}</td>
+          <td>${d.department}</td>
+          <td>${time}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const csv = csvData.map(row => row.join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `registrants-${activityId}.csv`;
+      link.click();
+    });
+  </script>
+</body>
+</html>
